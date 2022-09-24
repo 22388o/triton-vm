@@ -112,5 +112,4 @@ None.
 
 ## Relations to Other Tables
 
-1. An Evaluation Argument establishes that whenever the [processor](processor-table.md) executes a `hash` instruction, the values of the stack's 12 top-most registers correspond to some row in the Hash Table with round index equal to 1.
-1. An Evaluation Argument establishes that after having executed a `hash` instruction, the top 6 stack registers in the [processor](processor-table.md) correspond to the digest computed in the Hash Coprocessor, i.e., the first six values of the Hash Table's row with round index equal to 8.
+1. An Evaluation Argument establishes that whenever the [processor](processor-table.md) executes a `hash` instruction, the relevant state registers are correctly copied to the Hash Table, and the result is correctly copied from the Hash Table.

@@ -20,7 +20,7 @@ use crate::table::table_column::ProcessorTableColumn::{self, *};
 use super::extension_table::{Quotientable, QuotientableExtensionTable};
 
 pub const PROCESSOR_TABLE_PERMUTATION_ARGUMENTS_COUNT: usize = 5;
-pub const PROCESSOR_TABLE_EVALUATION_ARGUMENT_COUNT: usize = 4;
+pub const PROCESSOR_TABLE_EVALUATION_ARGUMENT_COUNT: usize = 3;
 pub const PROCESSOR_TABLE_INITIALS_COUNT: usize =
     PROCESSOR_TABLE_PERMUTATION_ARGUMENTS_COUNT + PROCESSOR_TABLE_EVALUATION_ARGUMENT_COUNT;
 
@@ -29,7 +29,7 @@ pub const PROCESSOR_TABLE_EXTENSION_CHALLENGE_COUNT: usize = 43;
 
 pub const BASE_WIDTH: usize = 38;
 /// BASE_WIDTH + 2 * INITIALS_COUNT - 2 (because IOSymbols don't need compression)
-pub const FULL_WIDTH: usize = 54;
+pub const FULL_WIDTH: usize = 52;
 
 #[derive(Debug, Clone)]
 pub struct ProcessorTable {
@@ -185,7 +185,7 @@ impl ProcessorTable {
             extension_row[usize::from(JumpStackTablePermArg)] = jump_stack_running_product;
 
             // Hash Table – Hash's input from Processor to Hash Coprocessor
-            let st_0_through_9 = [
+            let st_0_through_9_input = [
                 extension_row[ST0 as usize],
                 extension_row[ST1 as usize],
                 extension_row[ST2 as usize],
@@ -197,43 +197,48 @@ impl ProcessorTable {
                 extension_row[ST8 as usize],
                 extension_row[ST9 as usize],
             ];
-            let compressed_row_for_hash_input = st_0_through_9
+            let compressed_row_for_hash_input = st_0_through_9_input
                 .iter()
-                .zip_eq(challenges.hash_table_stack_input_weights.iter())
+                .zip_eq(challenges.hash_table_state_weights.iter())
                 .map(|(&st, &weight)| weight * st)
                 .fold(XFieldElement::zero(), XFieldElement::add);
-            extension_row[usize::from(CompressedRowForHashInput)] = compressed_row_for_hash_input;
+            extension_row[usize::from(CompressedRowForHashTable)] = compressed_row_for_hash_input;
 
             if row[CI as usize] == Instruction::Hash.opcode_b() {
                 to_hash_table_running_evaluation = to_hash_table_running_evaluation
-                    * challenges.to_hash_table_eval_row_weight
+                    * challenges.hash_table_eval_row_weight
                     + compressed_row_for_hash_input;
             }
-            extension_row[usize::from(ToHashTableEvalArg)] = to_hash_table_running_evaluation;
+            extension_row[usize::from(HashTableEvalArg)] = to_hash_table_running_evaluation;
 
             // Hash Table – Hash's output from Hash Coprocessor to Processor
-            let st_5_through_9 = [
+            let st_0_through_9_output = [
+                XFieldElement::zero(),
+                XFieldElement::zero(),
+                XFieldElement::zero(),
+                XFieldElement::zero(),
+                XFieldElement::zero(),
                 extension_row[ST5 as usize],
                 extension_row[ST6 as usize],
                 extension_row[ST7 as usize],
                 extension_row[ST8 as usize],
                 extension_row[ST9 as usize],
             ];
-            let compressed_row_for_hash_digest = st_5_through_9
+            let compressed_row_for_hash_digest = st_0_through_9_output
                 .iter()
-                .zip_eq(challenges.hash_table_digest_output_weights.iter())
+                .zip_eq(challenges.hash_table_state_weights.iter())
                 .map(|(&st, &weight)| weight * st)
                 .fold(XFieldElement::zero(), XFieldElement::add);
-            extension_row[usize::from(CompressedRowForHashDigest)] = compressed_row_for_hash_digest;
+            extension_row[usize::from(CompressedRowForHashTable)] = compressed_row_for_hash_digest;
 
             if let Some(prow) = previous_row.clone() {
                 if prow[CI as usize] == Instruction::Hash.opcode_b() {
                     from_hash_table_running_evaluation = from_hash_table_running_evaluation
-                        * challenges.from_hash_table_eval_row_weight
+                        * challenges.hash_table_eval_row_weight
                         + compressed_row_for_hash_digest;
                 }
             }
-            extension_row[usize::from(FromHashTableEvalArg)] = from_hash_table_running_evaluation;
+            extension_row[usize::from(HashTableEvalArg)] = from_hash_table_running_evaluation;
 
             // U32 Table
             if let Some(prow) = previous_row {
@@ -434,8 +439,7 @@ pub struct ProcessorTableChallenges {
     /// permutation/evaluation column of the processor table.
     pub input_table_eval_row_weight: XFieldElement,
     pub output_table_eval_row_weight: XFieldElement,
-    pub to_hash_table_eval_row_weight: XFieldElement,
-    pub from_hash_table_eval_row_weight: XFieldElement,
+    pub hash_table_eval_row_weight: XFieldElement,
 
     pub instruction_perm_row_weight: XFieldElement,
     pub op_stack_perm_row_weight: XFieldElement,
@@ -464,8 +468,7 @@ pub struct ProcessorTableChallenges {
     pub jump_stack_table_jso_weight: XFieldElement,
     pub jump_stack_table_jsd_weight: XFieldElement,
 
-    pub hash_table_stack_input_weights: [XFieldElement; 2 * DIGEST_LENGTH],
-    pub hash_table_digest_output_weights: [XFieldElement; DIGEST_LENGTH],
+    pub hash_table_state_weights: [XFieldElement; 2 * DIGEST_LENGTH],
 
     pub u32_op_table_lhs_weight: XFieldElement,
     pub u32_op_table_rhs_weight: XFieldElement,

@@ -26,7 +26,7 @@ use super::extension_table::{ExtensionTable, Quotientable, QuotientableExtension
 use super::table_column::HashTableColumn;
 
 pub const HASH_TABLE_PERMUTATION_ARGUMENTS_COUNT: usize = 0;
-pub const HASH_TABLE_EVALUATION_ARGUMENT_COUNT: usize = 2;
+pub const HASH_TABLE_EVALUATION_ARGUMENT_COUNT: usize = 1;
 pub const HASH_TABLE_INITIALS_COUNT: usize =
     HASH_TABLE_PERMUTATION_ARGUMENTS_COUNT + HASH_TABLE_EVALUATION_ARGUMENT_COUNT;
 
@@ -34,7 +34,7 @@ pub const HASH_TABLE_INITIALS_COUNT: usize =
 pub const HASH_TABLE_EXTENSION_CHALLENGE_COUNT: usize = 18;
 
 pub const BASE_WIDTH: usize = 49;
-pub const FULL_WIDTH: usize = 53; // BASE_WIDTH + 2 * INITIALS_COUNT
+pub const FULL_WIDTH: usize = 51; // BASE_WIDTH + 2 * INITIALS_COUNT
 
 pub const NUM_ROUND_CONSTANTS: usize = STATE_SIZE * 2;
 pub const TOTAL_NUM_CONSTANTS: usize = NUM_ROUND_CONSTANTS * NUM_ROUNDS;
@@ -527,22 +527,26 @@ impl HashTable {
             ];
             let compressed_state_for_input = state_for_input
                 .iter()
-                .zip_eq(challenges.stack_input_weights.iter())
+                .zip_eq(challenges.state_weights.iter())
                 .map(|(&state, &weight)| weight * state)
                 .fold(XFieldElement::zero(), XFieldElement::add);
-            extension_row[usize::from(CompressedStateForInput)] = compressed_state_for_input;
+            extension_row[usize::from(CompressedState)] = compressed_state_for_input;
 
             // Add compressed input to running evaluation if round index marks beginning of hashing
             if row[HashTableColumn::ROUNDNUMBER as usize].value() == 1 {
                 from_processor_running_evaluation = from_processor_running_evaluation
-                    * challenges.from_processor_eval_row_weight
+                    * challenges.eval_row_weight
                     + compressed_state_for_input;
             }
-            extension_row[usize::from(FromProcessorRunningEvaluation)] =
-                from_processor_running_evaluation;
+            extension_row[usize::from(RunningEvaluation)] = from_processor_running_evaluation;
 
             // Compress digest values into single value (independent of round index)
             let state_for_output = [
+                XFieldElement::zero(),
+                XFieldElement::zero(),
+                XFieldElement::zero(),
+                XFieldElement::zero(),
+                XFieldElement::zero(),
                 extension_row[HashTableColumn::STATE0 as usize],
                 extension_row[HashTableColumn::STATE1 as usize],
                 extension_row[HashTableColumn::STATE2 as usize],
@@ -551,19 +555,18 @@ impl HashTable {
             ];
             let compressed_state_for_output = state_for_output
                 .iter()
-                .zip_eq(challenges.digest_output_weights.iter())
+                .zip_eq(challenges.state_weights.iter())
                 .map(|(&state, &weight)| weight * state)
                 .fold(XFieldElement::zero(), XFieldElement::add);
-            extension_row[usize::from(CompressedStateForOutput)] = compressed_state_for_output;
+            extension_row[usize::from(CompressedState)] = compressed_state_for_output;
 
             // Add compressed digest to running evaluation if round index marks end of hashing
             if row[HashTableColumn::ROUNDNUMBER as usize].value() == 9 {
                 to_processor_running_evaluation = to_processor_running_evaluation
-                    * challenges.to_processor_eval_row_weight
+                    * challenges.eval_row_weight
                     + compressed_state_for_output;
             }
-            extension_row[usize::from(ToProcessorRunningEvaluation)] =
-                to_processor_running_evaluation;
+            extension_row[usize::from(RunningEvaluation)] = to_processor_running_evaluation;
 
             extension_matrix.push(extension_row.to_vec());
         }
@@ -640,14 +643,11 @@ impl ExtHashTable {
 
 #[derive(Debug, Clone)]
 pub struct HashTableChallenges {
-    /// The weight that combines two consecutive rows in the
-    /// permutation/evaluation column of the hash table.
-    pub from_processor_eval_row_weight: XFieldElement,
-    pub to_processor_eval_row_weight: XFieldElement,
+    /// The weight that combines two consecutive rows in the evaluation column of the hash table.
+    pub eval_row_weight: XFieldElement,
 
-    /// Weights for condensing part of a row into a single column. (Related to processor table.)
-    pub stack_input_weights: [XFieldElement; 2 * DIGEST_LENGTH],
-    pub digest_output_weights: [XFieldElement; DIGEST_LENGTH],
+    /// Weights for condensing part of a row into a single column.
+    pub state_weights: [XFieldElement; 2 * DIGEST_LENGTH],
 }
 
 impl ExtensionTable for ExtHashTable {

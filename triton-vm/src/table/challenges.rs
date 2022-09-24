@@ -34,8 +34,7 @@ impl AllChallenges {
         let processor_table_challenges = ProcessorTableChallenges {
             input_table_eval_row_weight: weights.pop().unwrap(),
             output_table_eval_row_weight: weights.pop().unwrap(),
-            to_hash_table_eval_row_weight: weights.pop().unwrap(),
-            from_hash_table_eval_row_weight: weights.pop().unwrap(),
+            hash_table_eval_row_weight: weights.pop().unwrap(),
             instruction_perm_row_weight: weights.pop().unwrap(),
             op_stack_perm_row_weight: weights.pop().unwrap(),
             ram_perm_row_weight: weights.pop().unwrap(),
@@ -61,13 +60,8 @@ impl AllChallenges {
             jump_stack_table_jso_weight: weights.pop().unwrap(),
             jump_stack_table_jsd_weight: weights.pop().unwrap(),
 
-            hash_table_stack_input_weights: weights
+            hash_table_state_weights: weights
                 .drain(0..2 * DIGEST_LENGTH)
-                .collect::<Vec<_>>()
-                .try_into()
-                .unwrap(),
-            hash_table_digest_output_weights: weights
-                .drain(0..DIGEST_LENGTH)
                 .collect::<Vec<_>>()
                 .try_into()
                 .unwrap(),
@@ -130,13 +124,8 @@ impl AllChallenges {
         };
 
         let hash_table_challenges = HashTableChallenges {
-            from_processor_eval_row_weight: processor_table_challenges
-                .to_hash_table_eval_row_weight,
-            to_processor_eval_row_weight: processor_table_challenges
-                .from_hash_table_eval_row_weight,
-
-            stack_input_weights: processor_table_challenges.hash_table_stack_input_weights,
-            digest_output_weights: processor_table_challenges.hash_table_digest_output_weights,
+            eval_row_weight: processor_table_challenges.hash_table_eval_row_weight,
+            state_weights: processor_table_challenges.hash_table_state_weights,
         };
 
         let u32_op_table_challenges = U32OpTableChallenges {

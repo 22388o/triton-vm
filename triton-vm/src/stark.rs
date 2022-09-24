@@ -763,7 +763,7 @@ impl Stark {
                     .concat();
                 // FIXME this is a bad assertion. Come up with something better.
                 debug_assert_eq!(
-                    3 * 34, // 34 is the number of extension columns
+                    3 * 30, // 30 is the number of extension columns
                     bvalues.len(),
                     "9 X-field elements must become 27 B-field elements"
                 );

@@ -382,10 +382,8 @@ impl Display for ExtProcessorMatrixRow {
         row(f, "ram_table_pa", RamTablePermArg)?;
         row(f, "cr_jumpstack_table", CompressedRowJumpStackTable)?;
         row(f, "jumpstack_table_pa", JumpStackTablePermArg)?;
-        row(f, "cr_to_hash_table", CompressedRowForHashInput)?;
-        row(f, "to_hash_table_ea", ToHashTableEvalArg)?;
-        row(f, "cr_from_hash_table", CompressedRowForHashDigest)?;
-        row(f, "from_hash_table_ea", FromHashTableEvalArg)?;
+        row(f, "cr_hash_table", CompressedRowForHashTable)?;
+        row(f, "hash_table_ea", HashTableEvalArg)?;
         row(f, "cr_u32_lt", CompressedRowForU32Op)?;
         row(f, "u32_lt_pa", U32OpTablePermArg)?;
         write!(

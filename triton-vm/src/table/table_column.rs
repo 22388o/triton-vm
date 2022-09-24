@@ -168,12 +168,8 @@ pub enum ExtProcessorTableColumn {
     RamTablePermArg,
     CompressedRowJumpStackTable,
     JumpStackTablePermArg,
-
-    CompressedRowForHashInput,
-    ToHashTableEvalArg,
-    CompressedRowForHashDigest,
-    FromHashTableEvalArg,
-
+    CompressedRowForHashTable,
+    HashTableEvalArg,
     CompressedRowForU32Op,
     U32OpTablePermArg,
 }
@@ -194,10 +190,8 @@ impl std::fmt::Display for ExtProcessorTableColumn {
             RamTablePermArg => write!(f, "RamTablePermArg"),
             CompressedRowJumpStackTable => write!(f, "CompressedRowJumpStackTable"),
             JumpStackTablePermArg => write!(f, "JumpStackTablePermArg"),
-            CompressedRowForHashInput => write!(f, "CompressedRowForHashInput"),
-            ToHashTableEvalArg => write!(f, "ToHashTableEvalArg"),
-            CompressedRowForHashDigest => write!(f, "CompressedRowForHashDigest"),
-            FromHashTableEvalArg => write!(f, "FromHashTableEvalArg"),
+            CompressedRowForHashTable => write!(f, "CompressedRowForHashInput"),
+            HashTableEvalArg => write!(f, "ToHashTableEvalArg"),
             CompressedRowForU32Op => write!(f, "CompressedRowForU32Op"),
             U32OpTablePermArg => write!(f, "U32OpTablePermArg"),
         }
@@ -220,12 +214,10 @@ impl From<ExtProcessorTableColumn> for usize {
             RamTablePermArg => 45,
             CompressedRowJumpStackTable => 46,
             JumpStackTablePermArg => 47,
-            CompressedRowForHashInput => 48,
-            ToHashTableEvalArg => 49,
-            CompressedRowForHashDigest => 50,
-            FromHashTableEvalArg => 51,
-            CompressedRowForU32Op => 52,
-            U32OpTablePermArg => 53,
+            CompressedRowForHashTable => 48,
+            HashTableEvalArg => 49,
+            CompressedRowForU32Op => 50,
+            U32OpTablePermArg => 51,
         }
     }
 }
@@ -737,10 +729,8 @@ impl Bounded for HashTableColumn {
 #[derive(Debug, Clone, Copy)]
 pub enum ExtHashTableColumn {
     BaseColumn(HashTableColumn),
-    CompressedStateForInput,
-    ToProcessorRunningEvaluation,
-    CompressedStateForOutput,
-    FromProcessorRunningEvaluation,
+    CompressedState,
+    RunningEvaluation,
 }
 
 impl From<ExtHashTableColumn> for usize {
@@ -749,10 +739,8 @@ impl From<ExtHashTableColumn> for usize {
 
         match c {
             BaseColumn(base_column) => base_column.into(),
-            CompressedStateForInput => 49,
-            FromProcessorRunningEvaluation => 50,
-            CompressedStateForOutput => 51,
-            ToProcessorRunningEvaluation => 52,
+            CompressedState => 49,
+            RunningEvaluation => 50,
         }
     }
 }
@@ -763,7 +751,7 @@ impl Bounded for ExtHashTableColumn {
     }
 
     fn max_value() -> Self {
-        ExtHashTableColumn::ToProcessorRunningEvaluation
+        ExtHashTableColumn::RunningEvaluation
     }
 }
 

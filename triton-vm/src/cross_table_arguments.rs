@@ -17,7 +17,7 @@ use crate::table::table_column::{
 };
 
 pub const NUM_PRIVATE_PERM_ARGS: usize = PROCESSOR_TABLE_PERMUTATION_ARGUMENTS_COUNT;
-pub const NUM_PRIVATE_EVAL_ARGS: usize = 3;
+pub const NUM_PRIVATE_EVAL_ARGS: usize = 2;
 pub const NUM_CROSS_TABLE_ARGS: usize = NUM_PRIVATE_PERM_ARGS + NUM_PRIVATE_EVAL_ARGS;
 pub const NUM_PUBLIC_EVAL_ARGS: usize = 2;
 
@@ -254,18 +254,9 @@ impl EvalArg {
     pub fn processor_to_hash_eval_arg() -> Self {
         Self {
             from_table: ProcessorTable,
-            from_column: ExtProcessorTableColumn::ToHashTableEvalArg.into(),
+            from_column: ExtProcessorTableColumn::HashTableEvalArg.into(),
             to_table: HashTable,
-            to_column: ExtHashTableColumn::FromProcessorRunningEvaluation.into(),
-        }
-    }
-
-    pub fn hash_to_processor_eval_arg() -> Self {
-        Self {
-            from_table: HashTable,
-            from_column: ExtHashTableColumn::ToProcessorRunningEvaluation.into(),
-            to_table: ProcessorTable,
-            to_column: ExtProcessorTableColumn::FromHashTableEvalArg.into(),
+            to_column: ExtHashTableColumn::RunningEvaluation.into(),
         }
     }
 
@@ -273,7 +264,6 @@ impl EvalArg {
         [
             Self::program_instruction_eval_arg(),
             Self::processor_to_hash_eval_arg(),
-            Self::hash_to_processor_eval_arg(),
         ]
     }
 }
@@ -286,7 +276,6 @@ pub struct GrandCrossTableArg {
     processor_to_ram: PermArg,
     processor_to_jump_stack: PermArg,
     processor_to_hash: EvalArg,
-    hash_to_processor: EvalArg,
     processor_to_u32: PermArg,
 
     program_to_instruction_weight: XFieldElement,
@@ -295,7 +284,6 @@ pub struct GrandCrossTableArg {
     processor_to_ram_weight: XFieldElement,
     processor_to_jump_stack_weight: XFieldElement,
     processor_to_hash_weight: XFieldElement,
-    hash_to_processor_weight: XFieldElement,
     processor_to_u32_weight: XFieldElement,
 
     input_terminal: XFieldElement,
@@ -340,10 +328,6 @@ impl<'a> IntoIterator for &'a GrandCrossTableArg {
                 self.processor_to_hash_weight,
             ),
             (
-                &self.hash_to_processor as &'a dyn CrossTableArg,
-                self.hash_to_processor_weight,
-            ),
-            (
                 &self.processor_to_u32 as &'a dyn CrossTableArg,
                 self.processor_to_u32_weight,
             ),
@@ -365,7 +349,6 @@ impl GrandCrossTableArg {
             processor_to_ram: PermArg::processor_ram_perm_arg(),
             processor_to_jump_stack: PermArg::processor_jump_stack_perm_arg(),
             processor_to_hash: EvalArg::processor_to_hash_eval_arg(),
-            hash_to_processor: EvalArg::hash_to_processor_eval_arg(),
             processor_to_u32: PermArg::processor_u32_perm_arg(),
 
             program_to_instruction_weight: weights[0],
@@ -374,22 +357,21 @@ impl GrandCrossTableArg {
             processor_to_ram_weight: weights[3],
             processor_to_jump_stack_weight: weights[4],
             processor_to_hash_weight: weights[5],
-            hash_to_processor_weight: weights[6],
-            processor_to_u32_weight: weights[7],
+            processor_to_u32_weight: weights[6],
 
             input_terminal,
             input_to_processor: (
                 TableId::ProcessorTable,
                 usize::from(ExtProcessorTableColumn::InputTableEvalArg),
             ),
-            input_to_processor_weight: weights[8],
+            input_to_processor_weight: weights[7],
 
             output_terminal,
             processor_to_output: (
                 TableId::ProcessorTable,
                 usize::from(ExtProcessorTableColumn::OutputTableEvalArg),
             ),
-            processor_to_output_weight: weights[9],
+            processor_to_output_weight: weights[8],
         }
     }
 
